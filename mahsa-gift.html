@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0b">
+<title>...</title>
+<!--
+  =====================================================================
+  راهنمای سریع برای AmirAli:
+
+  ۱) ویدیو:
+     دنبال کامنت "VIDEO SOURCE HERE" بگرد.
+     <source src=""> رو با مسیر فایل ویدیوت پر کن.
+
+  ۲) عکس‌ها:
+     دنبال کامنت "PHOTOS ARRAY HERE" بگرد (توی تگ script).
+     const photos = ["photo1.jpg", "photo2.jpg", ...];
+
+  ۳) تاریخ شروع رابطه:
+     دنبال "START DATE HERE" بگرد.
+
+  ۴) امضای آخر صفحه:
+     دنبال "YOUR NAME HERE" بگرد.
+
+  ۵) QR Code:
+     این فایل چون روی گوشیته، آدرس اینترنتی نداره، پس فعلاً QR نمیشه ساخت.
+     وقتی فایل رو جایی آپلود کردی (مثلاً Netlify Drop) و یه لینک گرفتی،
+     بگو تا برات QR واقعی بسازم که مستقیم همین صفحه رو باز کنه.
+  =====================================================================
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Mrs+Saint+Delafield&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    color-scheme: dark;
+    --bg: #0a0a0b;
+    --surface: #141416;
+    --surface-2: #1c1c1e;
+    --gold: #c9a34d;
+    --gold-bright: #e8c876;
+    --ivory: #f2ede2;
+    --muted: #8a8578;
+    --line: rgba(201,163,77,0.18);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ background: var(--bg); }
+
+  html, body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ivory);
+    overflow-x: hidden;
+    min-height: 100%;
+  }
+
+  body{
+    font-family: 'Inter', sans-serif;
+  }
+
+  .mono{
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .display{
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
+
+  .script{
+    font-family: 'Mrs Saint Delafield', cursive;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* ---------- BOOT STAGE ---------- */
+  #boot{
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    transition: opacity 1.4s ease, visibility 1.4s;
+  }
+
+  #boot.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+
+  /* fake code editor, top-left, like real code running */
+  #terminal{
+    position: absolute;
+    top: 36px;
+    left: 22px;
+    right: 22px;
+    max-width: 480px;
+    font-size: clamp(11px, 2.4vw, 13px);
+    display:flex;
+    flex-direction:column;
+    gap: 9px;
+  }
+
+  #terminal .line{
+    display:flex;
+    gap: 12px;
+    opacity:0;
+    color: #d8d3c6;
+  }
+
+  #terminal .line.show{ opacity:1; }
+
+  #terminal .ln{
+    color: #45443e;
+    min-width: 16px;
+    text-align:right;
+    user-select:none;
+  }
+
+  #terminal .dim{ color: var(--muted); }
+  #terminal .gold{ color: var(--gold-bright); }
+
+  .cursor{
+    display:inline-block;
+    width:7px; height:1em;
+    background: var(--gold-bright);
+    margin-inline-start: 4px;
+    vertical-align: -2px;
+    animation: blink 1s steps(1) infinite;
+  }
+
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* centered reveal, sits above/over the code */
+  #revealStage{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 24px;
+  }
+
+  #matchName{
+    font-family: 'Mrs Saint Delafield', cursive;
+    font-size: clamp(64px, 16vw, 130px);
+    line-height: 1;
+    color: var(--gold-bright);
+    margin: 0 0 4px;
+    opacity:0;
+    transform: translateY(14px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+    text-shadow: 0 0 40px rgba(232,200,118,0.35);
+  }
+
+  #matchName.show{
+    opacity:1;
+    transform: translateY(0);
+  }
+
+  #probability{
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing: 3px;
+    font-size: 12px;
+    color: var(--muted);
+    opacity:0;
+    transition: opacity 1s ease 0.4s;
+  }
+
+  #probability.show{ opacity:1; }
+
+  #quote{
+    max-width: 640px;
+    margin-top: 50px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: clamp(26px, 6vw, 44px);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: var(--ivory);
+    opacity:0;
+    transition: opacity 1.6s ease;
+  }
+
+  #quote.show{ opacity:1; }
+
+  #openGift{
+    margin-top: 44px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold-bright);
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing: 2px;
+    font-size: 13px;
+    padding: 16px 34px;
+    border-radius: 2px;
+    cursor:pointer;
+    opacity:0;
+    transition: opacity 1.4s ease, background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  #openGift.show{ opacity:1; }
+
+  #openGift:hover{
+    background: var(--gold-bright);
+    color: #14120a;
+    box-shadow: 0 0 30px rgba(232,200,118,0.35);
+  }
+
+  #openGift:focus-visible{
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 4px;
+  }
+
+  /* ---------- MAIN CONTENT ---------- */
+  #main{
+    position:relative;
+    z-index: 1;
+    background: var(--bg);
+    padding: 100px 20px 60px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  @keyframes fadeUp{
+    from{ opacity:0; transform: translateY(22px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  section{
+    margin-bottom: 120px;
+    animation: fadeUp 0.9s ease both;
+  }
+
+  section:nth-of-type(2){ animation-delay: 0.1s; }
+  section:nth-of-type(3){ animation-delay: 0.2s; }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    display:inline-block;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--gold);
+    border: 1px solid var(--line);
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 22px;
+  }
+
+  h2{
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-size: clamp(26px, 4.4vw, 36px);
+    margin: 0 0 24px;
+    color: var(--ivory);
+  }
+
+  /* video */
+  .video-wrap{
+    position:relative;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 6px;
+    overflow:hidden;
+    aspect-ratio: 16/9;
+  }
+
+  video{
+    width:100%; height:100%;
+    display:block;
+    object-fit: cover;
+    background:#000;
+  }
+
+  .video-placeholder{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 14px;
+    color: var(--muted);
+    background: radial-gradient(circle at 50% 40%, #1c1a14 0%, #0a0a0b 75%);
+  }
+
+  .video-placeholder .ring{
+    width:56px; height:56px;
+    border-radius:50%;
+    border:1px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--gold-bright);
+    font-size: 20px;
+  }
+
+  .video-placeholder span{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing: 1px;
+  }
+
+  /* slider */
+  .slider{
+    position:relative;
+    border-radius: 6px;
+    overflow:hidden;
+    aspect-ratio: 4/3;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+
+  .slide{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0;
+    transition: opacity 0.9s ease;
+  }
+
+  .slide.active{ opacity:1; }
+
+  .slide.placeholder{
+    background: linear-gradient(135deg, #1a1812, #0c0b09);
+    flex-direction:column;
+    gap:10px;
+    color: var(--muted);
+  }
+
+  .slide.placeholder .num{
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: 34px;
+    color: var(--gold);
+  }
+
+  .slide img{
+    width:100%; height:100%; object-fit:cover;
+  }
+
+  .dots{
+    display:flex; gap:8px; justify-content:center; margin-top:18px;
+  }
+
+  .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    cursor:pointer;
+  }
+
+  .dot.active{ background: var(--gold); }
+
+  /* counter */
+  .counter-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .counter-card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px 18px;
+    text-align:center;
+  }
+
+  .counter-card .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size: clamp(24px, 5vw, 34px);
+    color: var(--gold-bright);
+  }
+
+  .counter-card .label{
+    margin-top: 8px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* footer */
+  footer{
+    text-align:center;
+    padding: 40px 20px 70px;
+    background: var(--bg);
+  }
+
+  footer .line1{
+    font-family: 'Mrs Saint Delafield', cursive;
+    font-size: 26px;
+    color: var(--ivory);
+    margin-bottom: 10px;
+  }
+
+  footer .line2{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  footer .line2 b{ color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <div id="terminal" class="mono"></div>
+  <div id="revealStage">
+    <div id="matchName">Mahsa</div>
+    <div id="probability" class="mono">Probability: 100%</div>
+    <div id="quote">Happy Birthday,<br>My Life.</div>
+    <button id="openGift">▶ &nbsp;Open Your Gift</button>
+  </div>
+</div>
+
+<div id="main">
+
+  <section id="sec-video">
+    <div class="eyebrow">FOR YOU</div>
+    <h2>I made you something.</h2>
+    <div class="video-wrap">
+      <!-- VIDEO SOURCE HERE -->
+      <video id="giftVideo" controls playsinline>
+        <source src="" type="video/mp4">
+      </video>
+      <div class="video-placeholder" id="videoPlaceholder">
+        <div class="ring">▶</div>
+        <span>VIDEO COMING SOON</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-photos">
+    <div class="eyebrow">MEMORIES</div>
+    <h2>Our moments.</h2>
+    <div class="slider" id="slider"></div>
+    <div class="dots" id="dots"></div>
+  </section>
+
+  <section id="sec-counter">
+    <div class="eyebrow">SINCE APRIL 23</div>
+    <h2>Time we've shared.</h2>
+    <div class="counter-grid">
+      <div class="counter-card"><div class="num" id="cYears">0</div><div class="label">YEARS</div></div>
+      <div class="counter-card"><div class="num" id="cMonths">0</div><div class="label">MONTHS</div></div>
+      <div class="counter-card"><div class="num" id="cDays">0</div><div class="label">DAYS</div></div>
+      <div class="counter-card"><div class="num" id="cMinutes">0</div><div class="label">MINUTES (TOTAL)</div></div>
+    </div>
+  </section>
+
+</div>
+
+<footer id="footer">
+  <div class="line1">Every line of this page was written for you.</div>
+  <div class="line2">Made with ❤ by <b>AmirAli</b></div>
+  <!-- YOUR NAME HERE -->
+</footer>
+
+<script>
+  // ---------------- BOOT SEQUENCE ----------------
+  const terminal = document.getElementById('terminal');
+  const matchName = document.getElementById('matchName');
+  const probability = document.getElementById('probability');
+  const quote = document.getElementById('quote');
+  const openGiftBtn = document.getElementById('openGift');
+  const boot = document.getElementById('boot');
+
+  const bootLines = [
+    { text: 'Initializing<span class="cursor"></span>', delay: 700 },
+    { text: 'Loading memories... <span class="gold">100%</span>', delay: 1300 },
+    { text: 'Comparing <span class="dim">8,200,000,000</span> humans...', delay: 1800 },
+    { text: 'Best Match Found.', delay: 1400 }
+  ];
+
+  let lineNum = 1;
+  function typeLine(container, html, cb){
+    const el = document.createElement('div');
+    el.className = 'line';
+    el.innerHTML = '<span class="ln">' + String(lineNum++).padStart(2,'0') + '</span><span>' + html + '</span>';
+    container.appendChild(el);
+    requestAnimationFrame(()=> el.classList.add('show'));
+    if(cb) setTimeout(cb, 500);
+  }
+
+  function runBoot(i){
+    if(i >= bootLines.length){
+      setTimeout(()=>{
+        matchName.classList.add('show');
+        setTimeout(()=> probability.classList.add('show'), 900);
+        setTimeout(()=> quote.classList.add('show'), 2400);
+        setTimeout(()=> openGiftBtn.classList.add('show'), 3600);
+      }, 500);
+      return;
+    }
+    typeLine(terminal, bootLines[i].text, ()=>{
+      setTimeout(()=> runBoot(i+1), bootLines[i].delay);
+    });
+  }
+
+  runBoot(0);
+
+  openGiftBtn.addEventListener('click', ()=>{
+    boot.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    setTimeout(()=>{
+      document.getElementById('sec-video').scrollIntoView({behavior:'smooth'});
+    }, 300);
+  });
+
+  document.body.style.overflow = 'hidden';
+
+  // ---------------- VIDEO PLACEHOLDER ----------------
+  const giftVideo = document.getElementById('giftVideo');
+  const videoPlaceholder = document.getElementById('videoPlaceholder');
+  const hasVideoSrc = giftVideo.querySelector('source').getAttribute('src').trim() !== '';
+  if(hasVideoSrc){
+    videoPlaceholder.style.display = 'none';
+  } else {
+    giftVideo.style.display = 'none';
+  }
+
+  // ---------------- PHOTOS ----------------
+  // PHOTOS ARRAY HERE
+  const photos = []; // e.g. ["photo1.jpg", "photo2.jpg", "photo3.jpg"]
+
+  const sliderEl = document.getElementById('slider');
+  const dotsEl = document.getElementById('dots');
+  const slideCount = photos.length > 0 ? photos.length : 4;
+  let current = 0;
+
+  for(let i=0; i<slideCount; i++){
+    const slide = document.createElement('div');
+    slide.className = 'slide' + (i===0 ? ' active' : '');
+    if(photos.length > 0){
+      const img = document.createElement('img');
+      img.src = photos[i];
+      img.alt = 'Photo ' + (i+1);
+      slide.appendChild(img);
+    } else {
+      slide.classList.add('placeholder');
+      slide.innerHTML = '<div class="num">' + (i+1).toString().padStart(2,'0') + '</div><span style="font-family:JetBrains Mono, monospace; font-size:12px;">Photo goes here</span>';
+    }
+    sliderEl.appendChild(slide);
+
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i===0 ? ' active' : '');
+    dot.addEventListener('click', ()=> goToSlide(i));
+    dotsEl.appendChild(dot);
+  }
+
+  const slideEls = sliderEl.querySelectorAll('.slide');
+  const dotEls = dotsEl.querySelectorAll('.dot');
+
+  function goToSlide(i){
+    slideEls[current].classList.remove('active');
+    dotEls[current].classList.remove('active');
+    current = i;
+    slideEls[current].classList.add('active');
+    dotEls[current].classList.add('active');
+  }
+
+  setInterval(()=>{
+    goToSlide((current + 1) % slideCount);
+  }, 4000);
+
+  // ---------------- LIVE COUNTER ----------------
+  // START DATE HERE
+  const startDate = new Date('2025-04-23T00:00:00');
+
+  function updateCounter(){
+    const now = new Date();
+    let years = now.getFullYear() - startDate.getFullYear();
+    let months = now.getMonth() - startDate.getMonth();
+    let days = now.getDate() - startDate.getDate();
+
+    if(days < 0){
+      months--;
+      const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+    if(months < 0){
+      years--;
+      months += 12;
+    }
+
+    const totalMinutes = Math.floor((now - startDate) / 60000);
+
+    document.getElementById('cYears').textContent = years;
+    document.getElementById('cMonths').textContent = months;
+    document.getElementById('cDays').textContent = days;
+    document.getElementById('cMinutes').textContent = totalMinutes.toLocaleString('en-US');
+  }
+
+  updateCounter();
+  setInterval(updateCounter, 1000);
+</script>
+
+</body>
+</html>
