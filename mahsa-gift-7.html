@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0b">
+<title>...</title>
+<!--
+  =====================================================================
+  راهنمای سریع برای AmirAli:
+
+  ۱) ویدیو:
+     دنبال کامنت "VIDEO SOURCE HERE" بگرد.
+     <source src=""> رو با مسیر فایل ویدیوت پر کن.
+
+  ۲) عکس‌ها:
+     دنبال کامنت "PHOTOS ARRAY HERE" بگرد (توی تگ script).
+     const photos = ["photo1.jpg", "photo2.jpg", ...];
+
+  ۳) تاریخ شروع رابطه:
+     دنبال "START DATE HERE" بگرد.
+
+  ۴) امضای آخر صفحه:
+     دنبال "YOUR NAME HERE" بگرد.
+
+  ۵) رمز ورود:
+     همین الان روی 8183 تنظیمه. اگه خواستی عوض کنی، تو تگ script
+     دنبال checkPass() بگرد و مقدار '8183' رو با رمز جدید عوض کن.
+
+  ۶) QR Code:
+     این فایل چون روی گوشیته، آدرس اینترنتی نداره، پس فعلاً QR نمیشه ساخت.
+     وقتی فایل رو جایی آپلود کردی و یه لینک گرفتی، بگو تا QR واقعی بسازم.
+
+  ۷) کد نامه‌ی مخفی:
+     دنبال "LETTER_CODE" بگرد تو تگ script، الان رو '1404' تنظیمه.
+     عوضش کن با همون کدی که تو هدیه (شمش نقره/کارت) مخفی می‌کنی.
+  =====================================================================
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Beau+Rivage&family=Inter:wght@400;500;600&family=Vazirmatn:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    color-scheme: dark;
+    --bg: #0a0a0b;
+    --surface: #141416;
+    --surface-2: #1c1c1e;
+    --gold: #c9a34d;
+    --gold-bright: #e8c876;
+    --ivory: #f2ede2;
+    --muted: #8a8578;
+    --line: rgba(201,163,77,0.18);
+    --wine: #9c5252;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ background: var(--bg); }
+
+  html, body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ivory);
+    overflow-x: hidden;
+    min-height: 100%;
+  }
+
+  body{
+    font-family: 'Inter', sans-serif;
+  }
+
+  .mono{
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .display{
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
+
+  .script{
+    font-family: 'Beau Rivage', cursive;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* ---------- PASSCODE GATE ---------- */
+  #passGate{
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 200;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: opacity 0.8s ease, visibility 0.8s;
+  }
+
+  #passGate.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+
+  .passWrap{
+    text-align:center;
+  }
+
+  .passLabel{
+    font-family:'JetBrains Mono', monospace;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 30px;
+  }
+
+  .passDots{
+    display:flex;
+    gap: 18px;
+    justify-content:center;
+    margin-bottom: 42px;
+  }
+
+  .passDots .dotBox{
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    background: transparent;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .passDots .dotBox.filled{
+    background: var(--gold-bright);
+    transform: scale(1.15);
+  }
+
+  .keypad{
+    display:grid;
+    grid-template-columns: repeat(3, 64px);
+    gap: 16px;
+    justify-content:center;
+  }
+
+  .keypad button{
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--ivory);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    width: 64px;
+    height: 64px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .keypad button:active{
+    background: var(--surface-2);
+    border-color: var(--gold);
+  }
+
+  .keypad button.ghost{
+    visibility: hidden;
+  }
+
+  .keypad button.backspace{
+    font-size: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+
+  #passError{
+    margin-top: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #c47a7a;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  #passError.show{ opacity: 1; }
+
+  #passGate.shake .passWrap{
+    animation: shakeX 0.4s ease;
+  }
+
+  @keyframes shakeX{
+    0%, 100%{ transform: translateX(0); }
+    25%{ transform: translateX(-10px); }
+    75%{ transform: translateX(10px); }
+  }
+
+  /* ---------- GRAND FLASH ---------- */
+  #flash{
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: radial-gradient(circle, rgba(232,200,118,0.9) 0%, rgba(232,200,118,0) 65%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #flash.fire{
+    animation: flashBurst 0.9s ease-out;
+  }
+
+  @keyframes flashBurst{
+    0%{ opacity: 0; }
+    12%{ opacity: 1; }
+    100%{ opacity: 0; }
+  }
+
+  /* ---------- BOOT STAGE ---------- */
+  #boot{
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    transition: opacity 1.4s ease, visibility 1.4s;
+  }
+
+  #boot.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+
+  /* fake code editor, top-left, like real code running */
+  #terminal{
+    position: absolute;
+    top: 36px;
+    left: 22px;
+    right: 22px;
+    max-width: 480px;
+    font-size: clamp(11px, 2.4vw, 13px);
+    display:flex;
+    flex-direction:column;
+    gap: 9px;
+  }
+
+  #terminal .line{
+    display:flex;
+    gap: 12px;
+    opacity:0;
+    color: #d8d3c6;
+  }
+
+  #terminal .line.show{ opacity:1; }
+
+  #terminal .ln{
+    color: #45443e;
+    min-width: 16px;
+    text-align:right;
+    user-select:none;
+  }
+
+  #terminal .dim{ color: var(--muted); }
+  #terminal .gold{ color: var(--gold-bright); }
+
+  .cursor{
+    display:inline-block;
+    width:7px; height:1em;
+    background: var(--gold-bright);
+    margin-inline-start: 4px;
+    vertical-align: -2px;
+    animation: blink 1s steps(1) infinite;
+  }
+
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* centered reveal, sits above/over the code */
+  #revealStage{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 24px;
+  }
+
+  #matchName{
+    font-family: 'Beau Rivage', cursive;
+    font-size: clamp(84px, 21vw, 165px);
+    line-height: 1;
+    color: var(--gold-bright);
+    margin: 0 0 4px;
+    opacity:0;
+    transform: translateY(14px) scale(0.85);
+    transition: opacity 1.3s ease, transform 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+    text-shadow: 0 0 50px rgba(232,200,118,0.45);
+  }
+
+  #matchName.show{
+    opacity:1;
+    transform: translateY(0) scale(1);
+  }
+
+  #matchName.shine{
+    background-image: linear-gradient(100deg, var(--gold-bright) 30%, #fff8e0 50%, var(--gold-bright) 70%);
+    background-size: 260% 100%;
+    background-position: 200% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shineSweep 1.6s ease-out 0.15s;
+  }
+
+  @keyframes shineSweep{
+    to{ background-position: -60% 0; }
+  }
+
+  #probability{
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing: 3px;
+    font-size: 12px;
+    color: var(--muted);
+    opacity:0;
+    transition: opacity 1s ease 0.4s;
+  }
+
+  #probability.show{ opacity:1; }
+
+  #quote{
+    max-width: 640px;
+    margin-top: 50px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: clamp(26px, 6vw, 44px);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: var(--ivory);
+    opacity:0;
+    transition: opacity 1.6s ease;
+  }
+
+  #quote.show{ opacity:1; }
+
+  #openGift{
+    margin-top: 44px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold-bright);
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing: 2px;
+    font-size: 13px;
+    padding: 16px 34px;
+    border-radius: 2px;
+    cursor:pointer;
+    opacity:0;
+    transition: opacity 1.4s ease, background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  #openGift.show{ opacity:1; }
+
+  #openGift:hover{
+    background: var(--gold-bright);
+    color: #14120a;
+    box-shadow: 0 0 30px rgba(232,200,118,0.35);
+  }
+
+  #openGift:focus-visible{
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 4px;
+  }
+
+  /* ---------- CELEBRATION (balloons + confetti) ---------- */
+  #celebration{
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .balloon{
+    position: absolute;
+    bottom: -140px;
+    width: 46px;
+    height: 58px;
+    border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
+    opacity: 0;
+    animation: floatBalloon linear forwards;
+  }
+
+  .balloon::before{
+    content:'';
+    position:absolute;
+    left:50%; top:100%;
+    width:1px; height:46px;
+    background: rgba(242,237,226,0.35);
+    transform: translateX(-50%);
+  }
+
+  .balloon::after{
+    content:'';
+    position:absolute;
+    left:50%; top:-6px;
+    width:6px; height:8px;
+    background: inherit;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform: translateX(-50%);
+  }
+
+  @keyframes floatBalloon{
+    0%{
+      transform: translateY(0) translateX(0) rotate(0deg);
+      opacity: 0;
+    }
+    8%{ opacity: 0.95; }
+    50%{
+      transform: translateY(-58vh) translateX(var(--drift, 20px)) rotate(4deg);
+    }
+    100%{
+      transform: translateY(-125vh) translateX(calc(var(--drift, 20px) * -1)) rotate(-4deg);
+      opacity: 0;
+    }
+  }
+
+  .confetti{
+    position: absolute;
+    top: -20px;
+    width: 8px;
+    height: 14px;
+    opacity: 0;
+    animation: fallConfetti linear forwards;
+  }
+
+  @keyframes fallConfetti{
+    0%{ transform: translateY(0) rotate(0deg); opacity: 0; }
+    6%{ opacity: 1; }
+    100%{ transform: translateY(115vh) rotate(540deg); opacity: 0; }
+  }
+
+  /* ---------- MAIN CONTENT ---------- */
+  #main{
+    position:relative;
+    z-index: 1;
+    background: var(--bg);
+    padding: 100px 20px 60px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  @keyframes fadeUp{
+    from{ opacity:0; transform: translateY(22px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  section{
+    margin-bottom: 120px;
+    animation: fadeUp 0.9s ease both;
+  }
+
+  section:nth-of-type(2){ animation-delay: 0.1s; }
+  section:nth-of-type(3){ animation-delay: 0.2s; }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    display:inline-block;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--gold);
+    border: 1px solid var(--line);
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 22px;
+  }
+
+  h2{
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-size: clamp(26px, 4.4vw, 36px);
+    margin: 0 0 24px;
+    color: var(--ivory);
+  }
+
+  /* video */
+  .video-wrap{
+    position:relative;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 6px;
+    overflow:hidden;
+    aspect-ratio: 16/9;
+  }
+
+  video{
+    width:100%; height:100%;
+    display:block;
+    object-fit: cover;
+    background:#000;
+  }
+
+  .video-placeholder{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 14px;
+    color: var(--muted);
+    background: radial-gradient(circle at 50% 40%, #1c1a14 0%, #0a0a0b 75%);
+  }
+
+  .video-placeholder .ring{
+    width:56px; height:56px;
+    border-radius:50%;
+    border:1px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    color: var(--gold-bright);
+    font-size: 20px;
+  }
+
+  .video-placeholder span{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing: 1px;
+  }
+
+  /* slider */
+  .slider{
+    position:relative;
+    border-radius: 6px;
+    overflow:hidden;
+    aspect-ratio: 4/3;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+
+  .slide{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0;
+    transition: opacity 0.9s ease;
+  }
+
+  .slide.active{ opacity:1; }
+
+  .slide.placeholder{
+    background: linear-gradient(135deg, #1a1812, #0c0b09);
+    flex-direction:column;
+    gap:10px;
+    color: var(--muted);
+  }
+
+  .slide.placeholder .num{
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: 34px;
+    color: var(--gold);
+  }
+
+  .slide img{
+    width:100%; height:100%; object-fit:cover;
+  }
+
+  .dots{
+    display:flex; gap:8px; justify-content:center; margin-top:18px;
+  }
+
+  .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    cursor:pointer;
+  }
+
+  .dot.active{ background: var(--gold); }
+
+  /* counter */
+  .counter-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .counter-card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px 18px;
+    text-align:center;
+  }
+
+  .counter-card .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size: clamp(24px, 5vw, 34px);
+    color: var(--gold-bright);
+  }
+
+  .counter-card .label{
+    margin-top: 8px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* footer */
+  footer{
+    text-align:center;
+    padding: 40px 20px 70px;
+    background: var(--bg);
+  }
+
+  footer .line1{
+    font-family: 'Beau Rivage', cursive;
+    font-size: 26px;
+    color: var(--ivory);
+    margin-bottom: 10px;
+  }
+
+  footer .line2{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  footer .line2 b{ color: var(--gold); }
+
+  /* ---------- OUR SPACE ---------- */
+  #loginBox{
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  #loginBox input{
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ivory);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+
+  #loginBox input:focus{ outline: 1px solid var(--gold); }
+
+  #loginBox button, .osBtn{
+    width: 100%;
+    background: var(--gold);
+    color: #14120a;
+    border: none;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 13px;
+    border-radius: 6px;
+  }
+
+  #loginError{
+    color: #c47a7a;
+    font-size: 12px;
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    display:none;
+  }
+
+  #osTabs{
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  #osTabs button{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 8px 14px;
+    border-radius: 20px;
+  }
+
+  #osTabs button.active{
+    color: var(--gold-bright);
+    border-color: var(--gold);
+  }
+
+  #playerBar{
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  #playerBar button{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--gold-bright);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-size: 14px;
+  }
+
+  #nowPlaying{
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ivory);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .plItem.playing{ border-color: var(--gold); }
+  .plItem{ cursor: pointer; }
+
+  .tkForm{
+    display:flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .tkForm select, .tkForm input{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ivory);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 11px 12px;
+    border-radius: 6px;
+  }
+
+  .tkItem{
+    display:flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .tkItem .tkDate{ color: var(--gold-bright); font-family: 'JetBrains Mono', monospace; }
+  .tkItem .tkNote{ color: var(--muted); margin-top: 4px; }
+
+  .tkActions{
+    display:flex;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-inline-start: 10px;
+  }
+
+  .tkActions button{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  .tkActions .tkDelete{ color: #c47a7a; }
+
+  #tkPredictions{
+    display:none;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 16px;
+    margin-bottom: 18px;
+    direction: rtl;
+    font-family: 'Vazirmatn', sans-serif;
+  }
+
+  #tkPredictions .predRow{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+
+  #tkPredictions .predRow:last-of-type{ border-bottom: none; }
+
+  #tkPredictions .predLabel{ color: var(--muted); }
+  #tkPredictions .predValue{ color: var(--gold-bright); font-family: 'JetBrains Mono', monospace; }
+
+  #tkPredictions .predNote{
+    margin-top: 12px;
+    font-size: 11px;
+    line-height: 1.9;
+    color: var(--muted);
+  }
+
+  .osPanel{ display:none; }
+  .osPanel.active{ display:block; }
+
+  .plItem, .tlItem{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .tlItem.done{ opacity: 0.5; text-decoration: line-through; }
+  .tlItem{ cursor: pointer; }
+
+  .plItem a{ color: var(--gold-bright); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .osForm{ display:flex; gap: 8px; margin-top: 14px; }
+  .osForm input{
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ivory);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 6px;
+  }
+  .osForm button{
+    background: var(--gold);
+    color: #14120a;
+    border: none;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    padding: 0 18px;
+    border-radius: 6px;
+  }
+
+  .moodGrid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .moodGrid button{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 6px;
+    font-size: 26px;
+  }
+
+  .moodGrid button small{
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  #moodMessage{
+    margin-top: 18px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.7;
+    display:none;
+  }
+
+  #letterUnlockBtn{ max-width: 260px; margin: 0 auto; display:block; }
+
+  #letterBody{
+    display:none;
+    max-width: 560px;
+    margin: 24px auto 0;
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 16px;
+    line-height: 2.1;
+    white-space: pre-line;
+    color: var(--ivory);
+    direction: rtl;
+    text-align: right;
+  }
+
+  #letterBody .signature{
+    display: inline-block;
+    font-family: 'Beau Rivage', cursive;
+    font-size: 34px;
+    color: var(--gold-bright);
+    direction: ltr;
+    margin-inline-start: 6px;
+    vertical-align: -6px;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div id="passGate">
+  <div class="passWrap">
+    <div class="passLabel">ENTER ACCESS CODE</div>
+    <div class="passDots" id="passDots">
+      <div class="dotBox"></div>
+      <div class="dotBox"></div>
+      <div class="dotBox"></div>
+      <div class="dotBox"></div>
+    </div>
+    <div class="keypad" id="keypad">
+      <button data-key="1">1</button>
+      <button data-key="2">2</button>
+      <button data-key="3">3</button>
+      <button data-key="4">4</button>
+      <button data-key="5">5</button>
+      <button data-key="6">6</button>
+      <button data-key="7">7</button>
+      <button data-key="8">8</button>
+      <button data-key="9">9</button>
+      <button class="ghost"></button>
+      <button data-key="0">0</button>
+      <button class="backspace" data-key="back">⌫</button>
+    </div>
+    <div id="passError">Incorrect code</div>
+  </div>
+</div>
+<div id="flash"></div>
+
+<div id="boot">
+  <div id="terminal" class="mono"></div>
+  <div id="celebration"></div>
+  <div id="revealStage">
+    <div id="matchName">Mahsa</div>
+    <div id="probability" class="mono">Probability: 100%</div>
+    <div id="quote">Happy Birthday,<br>My Life.</div>
+    <button id="openGift">▶ &nbsp;Open Your Gift</button>
+  </div>
+</div>
+
+<div id="main">
+
+  <section id="sec-video">
+    <div class="eyebrow">FOR YOU</div>
+    <h2>I made you something.</h2>
+    <div class="video-wrap">
+      <!-- VIDEO SOURCE HERE -->
+      <video id="giftVideo" controls playsinline>
+        <source src="vcompress_25.mp4" type="video/mp4">
+      </video>
+      <div class="video-placeholder" id="videoPlaceholder">
+        <div class="ring">▶</div>
+        <span>VIDEO COMING SOON</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-photos">
+    <div class="eyebrow">MEMORIES</div>
+    <h2>Our moments.</h2>
+    <div class="slider" id="slider"></div>
+    <div class="dots" id="dots"></div>
+  </section>
+
+  <section id="sec-counter">
+    <div class="eyebrow">SINCE APRIL 23</div>
+    <h2>Time we've shared.</h2>
+    <div class="counter-grid">
+      <div class="counter-card"><div class="num" id="cYears">0</div><div class="label">YEARS</div></div>
+      <div class="counter-card"><div class="num" id="cMonths">0</div><div class="label">MONTHS</div></div>
+      <div class="counter-card"><div class="num" id="cDays">0</div><div class="label">DAYS</div></div>
+      <div class="counter-card"><div class="num" id="cMinutes">0</div><div class="label">MINUTES (TOTAL)</div></div>
+    </div>
+  </section>
+
+  <section id="sec-ourspace">
+    <div class="eyebrow">JUST FOR US</div>
+    <h2>Our space.</h2>
+
+    <div id="loginBox">
+      <input id="loginEmail" type="email" placeholder="Email" autocomplete="email">
+      <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password">
+      <button id="loginBtn">Sign in</button>
+      <div id="loginError">Wrong email or password.</div>
+    </div>
+
+    <div id="osContent" style="display:none;">
+      <div id="osTabs">
+        <button data-tab="playlist" class="active">Playlist</button>
+        <button data-tab="timeline">Future</button>
+        <button data-tab="mood">Mood</button>
+        <button data-tab="letter">Letter</button>
+        <button data-tab="toolkit">Toolkit</button>
+      </div>
+
+      <div class="osPanel active" id="panel-playlist">
+        <div id="playerBar">
+          <button id="prevBtn">⏮</button>
+          <button id="playPauseBtn">▶</button>
+          <button id="nextBtn">⏭</button>
+          <div id="nowPlaying">Select a song</div>
+        </div>
+        <audio id="audioEl"></audio>
+        <div id="plList"></div>
+        <div class="osForm">
+          <input id="plTitle" placeholder="Song title">
+          <input id="plUrl" placeholder="Link (.mp3)">
+          <button id="plAdd">Add</button>
+        </div>
+      </div>
+
+      <div class="osPanel" id="panel-timeline">
+        <div id="tlList"></div>
+      </div>
+
+      <div class="osPanel" id="panel-mood">
+        <div class="moodGrid">
+          <button data-mood="Happy">😊<br><small>Happy</small></button>
+          <button data-mood="Sad">😔<br><small>Sad</small></button>
+          <button data-mood="Stressed">😫<br><small>Stressed</small></button>
+          <button data-mood="Tired">😴<br><small>Tired</small></button>
+        </div>
+        <div id="moodMessage"></div>
+      </div>
+
+      <div class="osPanel" id="panel-letter">
+        <button id="letterUnlockBtn" class="osBtn">Unlock Final Message</button>
+        <div id="letterBody"></div>
+      </div>
+
+      <div class="osPanel" id="panel-toolkit">
+        <div class="tkForm">
+          <select id="tkType">
+            <option value="period">Period</option>
+            <option value="pill">Pill</option>
+          </select>
+          <input id="tkDate" type="date">
+          <input id="tkNote" placeholder="Note (optional)">
+          <button id="tkAdd" class="osBtn">Add entry</button>
+        </div>
+        <div id="tkPredictions"></div>
+        <div id="tkList"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer id="footer">
+  <div class="line1">Every line of this page was written for you.</div>
+  <div class="line2">Made with ❤ by <b>AmirAli</b></div>
+  <!-- YOUR NAME HERE -->
+</footer>
+
+<script>
+  // ---------------- AUDIO (synthetic, no files needed) ----------------
+  let audioCtx = null;
+  function initAudio(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(audioCtx.state === 'suspended'){
+      audioCtx.resume();
+    }
+    // unlock trick: play one silent buffer immediately on the user gesture
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    src.connect(audioCtx.destination);
+    src.start(0);
+  }
+
+  function playClick(){
+    if(!audioCtx) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1400;
+    osc.type = 'sine';
+    osc.frequency.value = 340 + Math.random() * 90;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.linearRampToValueAtTime(0.05, t + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.06);
+  }
+
+  function playChime(){
+    if(!audioCtx) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    [523.25, 659.25, 784.0, 1046.5].forEach((freq, i)=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = t + i * 0.1;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.18, start + 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.6);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + 1.7);
+    });
+  }
+
+  // ---------------- BOOT SEQUENCE ----------------
+  const terminal = document.getElementById('terminal');
+  const matchName = document.getElementById('matchName');
+  const probability = document.getElementById('probability');
+  const quote = document.getElementById('quote');
+  const openGiftBtn = document.getElementById('openGift');
+  const boot = document.getElementById('boot');
+  const flash = document.getElementById('flash');
+  const passGate = document.getElementById('passGate');
+  const passDots = document.querySelectorAll('#passDots .dotBox');
+  const passError = document.getElementById('passError');
+  const keypad = document.getElementById('keypad');
+  let enteredCode = '';
+
+  function renderDots(){
+    passDots.forEach((dot, i)=>{
+      dot.classList.toggle('filled', i < enteredCode.length);
+    });
+  }
+
+  function checkPass(){
+    if(enteredCode === '8183'){
+      initAudio();
+      passGate.classList.add('hidden');
+      runBoot(0);
+    } else {
+      passError.classList.add('show');
+      passGate.classList.add('shake');
+      setTimeout(()=>{
+        passGate.classList.remove('shake');
+        enteredCode = '';
+        renderDots();
+      }, 400);
+    }
+  }
+
+  keypad.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-key]');
+    if(!btn) return;
+    const key = btn.dataset.key;
+    passError.classList.remove('show');
+
+    if(key === 'back'){
+      enteredCode = enteredCode.slice(0, -1);
+      renderDots();
+      return;
+    }
+
+    if(enteredCode.length < 4){
+      enteredCode += key;
+      renderDots();
+      if(enteredCode.length === 4){
+        setTimeout(checkPass, 150);
+      }
+    }
+  });
+
+  const bootLines = [
+    { text: 'Initializing...', delay: 650 },
+    { text: 'Loading memories... 100%', delay: 1200, highlight: '100%' },
+    { text: 'Comparing 8,200,000,000 humans...', delay: 1700, highlight: '8,200,000,000', dim: true },
+    { text: 'Best Match Found.', delay: 1500 }
+  ];
+
+  let lineNum = 1;
+
+  function typeChars(el, text, cb){
+    let i = 0;
+    function step(){
+      if(i < text.length){
+        el.textContent += text[i];
+        if(text[i] !== ' ' && i % 2 === 0) playClick();
+        i++;
+        setTimeout(step, 32 + Math.random() * 28);
+      } else if(cb){
+        cb();
+      }
+    }
+    step();
+  }
+
+  function applyHighlight(el, target, dim){
+    const cls = dim ? 'dim' : 'gold';
+    el.innerHTML = el.textContent.replace(target, '<span class="' + cls + '">' + target + '</span>');
+  }
+
+  function typeLine(container, lineData, cb){
+    const row = document.createElement('div');
+    row.className = 'line show';
+    const num = document.createElement('span');
+    num.className = 'ln';
+    num.textContent = String(lineNum++).padStart(2, '0');
+    const textSpan = document.createElement('span');
+    row.appendChild(num);
+    row.appendChild(textSpan);
+    container.appendChild(row);
+
+    typeChars(textSpan, lineData.text, ()=>{
+      if(lineData.highlight) applyHighlight(textSpan, lineData.highlight, lineData.dim);
+      if(cb) setTimeout(cb, 550);
+    });
+  }
+
+  function runBoot(i){
+    if(i >= bootLines.length){
+      setTimeout(()=>{
+        flash.classList.add('fire');
+        playChime();
+        setTimeout(()=>{
+          matchName.classList.add('show');
+          requestAnimationFrame(()=> matchName.classList.add('shine'));
+          triggerCelebration();
+        }, 280);
+        setTimeout(()=> probability.classList.add('show'), 1300);
+        setTimeout(()=> quote.classList.add('show'), 2900);
+        setTimeout(()=> openGiftBtn.classList.add('show'), 4100);
+      }, 500);
+      return;
+    }
+    typeLine(terminal, bootLines[i], ()=>{
+      setTimeout(()=> runBoot(i+1), bootLines[i].delay);
+    });
+  }
+
+  // ---------------- CELEBRATION: balloons + confetti ----------------
+  const celebration = document.getElementById('celebration');
+  const balloonColors = ['#e8c876', '#f2ede2', '#9c5252'];
+
+  function triggerCelebration(){
+    const w = window.innerWidth;
+
+    // balloons rising from the bottom
+    for(let i = 0; i < 14; i++){
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      const color = balloonColors[i % balloonColors.length];
+      b.style.background = color;
+      b.style.left = (Math.random() * (w - 60)) + 'px';
+      b.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+      const duration = 5 + Math.random() * 2.5;
+      b.style.animationDuration = duration + 's';
+      b.style.animationDelay = (Math.random() * 0.6) + 's';
+      const scale = 0.7 + Math.random() * 0.6;
+      b.style.transform = 'scale(' + scale + ')';
+      celebration.appendChild(b);
+      setTimeout(()=> b.remove(), (duration + 1) * 1000);
+    }
+
+    // a quick confetti burst
+    for(let i = 0; i < 34; i++){
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      const color = balloonColors[i % balloonColors.length];
+      c.style.background = color;
+      c.style.left = (Math.random() * w) + 'px';
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      const duration = 2.4 + Math.random() * 1.6;
+      c.style.animationDuration = duration + 's';
+      c.style.animationDelay = (Math.random() * 0.4) + 's';
+      celebration.appendChild(c);
+      setTimeout(()=> c.remove(), (duration + 1) * 1000);
+    }
+  }
+
+  openGiftBtn.addEventListener('click', ()=>{
+    boot.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    setTimeout(()=>{
+      document.getElementById('sec-video').scrollIntoView({behavior:'smooth'});
+    }, 300);
+  });
+
+  document.body.style.overflow = 'hidden';
+
+  // ---------------- VIDEO PLACEHOLDER ----------------
+  const giftVideo = document.getElementById('giftVideo');
+  const videoPlaceholder = document.getElementById('videoPlaceholder');
+  const hasVideoSrc = giftVideo.querySelector('source').getAttribute('src').trim() !== '';
+  if(hasVideoSrc){
+    videoPlaceholder.style.display = 'none';
+  } else {
+    giftVideo.style.display = 'none';
+  }
+
+  // ---------------- PHOTOS ----------------
+  // PHOTOS ARRAY HERE
+  const photos = ["IMG_8121.jpeg", "IMG_8296.jpeg", "IMG_8297.jpeg", "IMG_8299.jpeg"]; // e.g. ["photo1.jpg", "photo2.jpg", "photo3.jpg"]
+
+  const sliderEl = document.getElementById('slider');
+  const dotsEl = document.getElementById('dots');
+  const slideCount = photos.length > 0 ? photos.length : 4;
+  let current = 0;
+
+  for(let i=0; i<slideCount; i++){
+    const slide = document.createElement('div');
+    slide.className = 'slide' + (i===0 ? ' active' : '');
+    if(photos.length > 0){
+      const img = document.createElement('img');
+      img.src = photos[i];
+      img.alt = 'Photo ' + (i+1);
+      slide.appendChild(img);
+    } else {
+      slide.classList.add('placeholder');
+      slide.innerHTML = '<div class="num">' + (i+1).toString().padStart(2,'0') + '</div><span style="font-family:JetBrains Mono, monospace; font-size:12px;">Photo goes here</span>';
+    }
+    sliderEl.appendChild(slide);
+
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i===0 ? ' active' : '');
+    dot.addEventListener('click', ()=> goToSlide(i));
+    dotsEl.appendChild(dot);
+  }
+
+  const slideEls = sliderEl.querySelectorAll('.slide');
+  const dotEls = dotsEl.querySelectorAll('.dot');
+
+  function goToSlide(i){
+    slideEls[current].classList.remove('active');
+    dotEls[current].classList.remove('active');
+    current = i;
+    slideEls[current].classList.add('active');
+    dotEls[current].classList.add('active');
+  }
+
+  setInterval(()=>{
+    goToSlide((current + 1) % slideCount);
+  }, 4000);
+
+  // ---------------- LIVE COUNTER ----------------
+  // START DATE HERE — always counts live from this date up to the real current moment
+  const startDate = new Date('2025-04-23T00:00:00');
+
+  function updateCounter(){
+    const now = new Date();
+
+    let years = now.getFullYear() - startDate.getFullYear();
+    let months = now.getMonth() - startDate.getMonth();
+    let days = now.getDate() - startDate.getDate();
+
+    if(days < 0){
+      months--;
+      const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+    if(months < 0){
+      years--;
+      months += 12;
+    }
+
+    const totalMinutes = Math.floor((now - startDate) / 60000);
+
+    document.getElementById('cYears').textContent = years;
+    document.getElementById('cMonths').textContent = months;
+    document.getElementById('cDays').textContent = days;
+    document.getElementById('cMinutes').textContent = totalMinutes.toLocaleString('en-US');
+  }
+
+  updateCounter();
+  setInterval(updateCounter, 1000);
+
+  // ---------------- OUR SPACE (Supabase) ----------------
+  if(typeof window.supabase === 'undefined'){
+    document.getElementById('loginBox').innerHTML =
+      '<div style="font-family:JetBrains Mono, monospace; font-size:12px; color:#c47a7a; text-align:center; line-height:1.8;">Connection failed.<br>Please refresh the page or check your internet connection.</div>';
+  } else {
+  try {
+  // SUPABASE CONFIG HERE
+  const SUPABASE_URL = 'https://gjonzgklukgvyfofkfue.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_I67DCgWR6AW9s_HNSk2M5Q_QGcXAghm';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const loginBox = document.getElementById('loginBox');
+  const osContent = document.getElementById('osContent');
+  const loginError = document.getElementById('loginError');
+
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    loginError.style.display = 'none';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      loginError.style.display = 'block';
+      return;
+    }
+    enterOurSpace();
+  });
+
+  async function enterOurSpace(){
+    loginBox.style.display = 'none';
+    osContent.style.display = 'block';
+    loadPlaylist();
+    loadTimeline();
+    loadToolkit();
+  }
+
+  // check if already logged in on page load
+  sb.auth.getSession().then(({ data })=>{
+    if(data.session) enterOurSpace();
+  });
+
+  // tabs
+  document.getElementById('osTabs').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-tab]');
+    if(!btn) return;
+    document.querySelectorAll('#osTabs button').forEach(b=> b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.osPanel').forEach(p=> p.classList.remove('active'));
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+
+  // --- playlist (with persistent player) ---
+  const audioEl = document.getElementById('audioEl');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const nowPlaying = document.getElementById('nowPlaying');
+  let plSongs = [];
+  let plIndex = -1;
+
+  async function loadPlaylist(){
+    const { data } = await sb.from('playlist').select('*').order('created_at', { ascending: true });
+    plSongs = data || [];
+    renderPlaylist();
+  }
+
+  function renderPlaylist(){
+    const list = document.getElementById('plList');
+    list.innerHTML = '';
+    plSongs.forEach((item, i)=>{
+      const row = document.createElement('div');
+      row.className = 'plItem' + (i === plIndex ? ' playing' : '');
+      row.innerHTML = '🎵 <span>' + item.title + '</span>';
+      row.addEventListener('click', ()=> playTrack(i));
+      list.appendChild(row);
+    });
+  }
+
+  function playTrack(i){
+    if(i < 0 || i >= plSongs.length) return;
+    plIndex = i;
+    audioEl.src = plSongs[i].url;
+    audioEl.play();
+    nowPlaying.textContent = plSongs[i].title;
+    playPauseBtn.textContent = '⏸';
+    renderPlaylist();
+  }
+
+  playPauseBtn.addEventListener('click', ()=>{
+    if(plIndex === -1){
+      if(plSongs.length) playTrack(0);
+      return;
+    }
+    if(audioEl.paused){
+      audioEl.play();
+      playPauseBtn.textContent = '⏸';
+    } else {
+      audioEl.pause();
+      playPauseBtn.textContent = '▶';
+    }
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    if(!plSongs.length) return;
+    playTrack((plIndex + 1) % plSongs.length);
+  });
+
+  document.getElementById('prevBtn').addEventListener('click', ()=>{
+    if(!plSongs.length) return;
+    playTrack((plIndex - 1 + plSongs.length) % plSongs.length);
+  });
+
+  audioEl.addEventListener('ended', ()=>{
+    if(plSongs.length) playTrack((plIndex + 1) % plSongs.length);
+  });
+
+  document.getElementById('plAdd').addEventListener('click', async ()=>{
+    const title = document.getElementById('plTitle').value.trim();
+    const url = document.getElementById('plUrl').value.trim();
+    if(!title || !url) return;
+    const { data: userData } = await sb.auth.getUser();
+    await sb.from('playlist').insert({ title, url, added_by: userData.user.id });
+    document.getElementById('plTitle').value = '';
+    document.getElementById('plUrl').value = '';
+    loadPlaylist();
+  });
+
+  // --- future timeline ---
+  async function loadTimeline(){
+    const { data } = await sb.from('future_timeline').select('*').order('sort_order', { ascending: true });
+    const list = document.getElementById('tlList');
+    list.innerHTML = '';
+    (data || []).forEach(item=>{
+      const row = document.createElement('div');
+      row.className = 'tlItem' + (item.is_done ? ' done' : '');
+      row.textContent = (item.is_done ? '✓ ' : '⬜ ') + item.label;
+      row.addEventListener('click', async ()=>{
+        await sb.from('future_timeline').update({ is_done: !item.is_done }).eq('id', item.id);
+        loadTimeline();
+      });
+      list.appendChild(row);
+    });
+  }
+
+  // --- private toolkit (shared: both of you can see it) ---
+
+  // Gregorian -> Jalali (Shamsi) conversion, no external library needed
+  function toJalali(gy, gm, gd){
+    const g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+    let jy;
+    gy = parseInt(gy); gm = parseInt(gm); gd = parseInt(gd);
+    const gy2 = (gm > 2) ? (gy + 1) : gy;
+    let days = 355666 + (365 * gy) + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400) + gd + g_d_m[gm - 1];
+    jy = -1595 + (33 * Math.floor(days / 12053));
+    days %= 12053;
+    jy += 4 * Math.floor(days / 1461);
+    days %= 1461;
+    if(days > 365){
+      jy += Math.floor((days - 1) / 365);
+      days = (days - 1) % 365;
+    }
+    let jm, jd;
+    if(days < 186){
+      jm = 1 + Math.floor(days / 31);
+      jd = 1 + (days % 31);
+    } else {
+      jm = 7 + Math.floor((days - 186) / 30);
+      jd = 1 + ((days - 186) % 30);
+    }
+    return jy + '/' + String(jm).padStart(2,'0') + '/' + String(jd).padStart(2,'0');
+  }
+
+  function formatJalali(dateStr){
+    const [y, m, d] = dateStr.split('-');
+    return toJalali(y, m, d);
+  }
+
+  function renderPredictions(data){
+    const box = document.getElementById('tkPredictions');
+    const periods = (data || [])
+      .filter(d=> d.entry_type === 'period')
+      .map(d=> new Date(d.entry_date))
+      .sort((a,b)=> a - b);
+
+    if(periods.length === 0){
+      box.style.display = 'none';
+      return;
+    }
+
+    let avgCycle = 28;
+    if(periods.length >= 2){
+      let totalDays = 0;
+      for(let i = 1; i < periods.length; i++){
+        totalDays += (periods[i] - periods[i-1]) / 86400000;
+      }
+      avgCycle = Math.round(totalDays / (periods.length - 1));
+    }
+
+    const lastPeriod = periods[periods.length - 1];
+    const addDays = (date, days)=>{
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    };
+    const toJalaliDate = (d)=> toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
+
+    const nextPeriod = addDays(lastPeriod, avgCycle);
+    const ovulation = addDays(nextPeriod, -14);
+    const fertileStart = addDays(ovulation, -5);
+    const fertileEnd = addDays(ovulation, 1);
+
+    box.style.display = 'block';
+    box.innerHTML =
+      '<div class="predRow"><span class="predLabel">تخمین تخمک‌گذاری:</span><span class="predValue">' + toJalaliDate(ovulation) + '</span></div>' +
+      '<div class="predRow"><span class="predLabel">پنجره‌ی باروری:</span><span class="predValue">' + toJalaliDate(fertileStart) + ' تا ' + toJalaliDate(fertileEnd) + '</span></div>' +
+      '<div class="predRow"><span class="predLabel">پریود بعدی (تخمینی):</span><span class="predValue">' + toJalaliDate(nextPeriod) + '</span></div>' +
+      '<div class="predNote">این تاریخ‌ها صرفاً برآوردی هستند و بر اساس میانگین چرخه‌های پیشین محاسبه می‌شوند. عواملی نظیر استرس، بیماری یا تغییرات هورمونی می‌توانند در زمان‌بندی واقعی اختلاف ایجاد کنند؛ بنابراین این اطلاعات نباید مبنای تصمیم‌گیری‌های قطعی پزشکی یا برنامه‌ریزی حساس قرار گیرند.</div>';
+  }
+
+  async function loadToolkit(){
+    const { data } = await sb.from('private_toolkit').select('*').order('entry_date', { ascending: false });
+    renderPredictions(data);
+    const list = document.getElementById('tkList');
+    list.innerHTML = '';
+    (data || []).forEach(item=>{
+      const row = document.createElement('div');
+      row.className = 'tkItem';
+      const label = item.entry_type === 'period' ? 'Period' : 'Pill';
+      row.innerHTML =
+        '<div>' + label + ' — <span class="tkDate">' + formatJalali(item.entry_date) + '</span>' +
+        (item.note ? '<div class="tkNote">' + item.note + '</div>' : '') + '</div>' +
+        '<div class="tkActions">' +
+          '<button class="tkEdit" data-id="' + item.id + '">✎</button>' +
+          '<button class="tkDelete" data-id="' + item.id + '">🗑</button>' +
+        '</div>';
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('.tkDelete').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Delete this entry?')) return;
+        await sb.from('private_toolkit').delete().eq('id', btn.dataset.id);
+        loadToolkit();
+      });
+    });
+
+    list.querySelectorAll('.tkEdit').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const item = data.find(d=> d.id == btn.dataset.id);
+        const newDate = prompt('New date (YYYY-MM-DD):', item.entry_date);
+        if(newDate === null) return;
+        const newNote = prompt('Note:', item.note || '');
+        await sb.from('private_toolkit').update({ entry_date: newDate, note: newNote || null }).eq('id', item.id);
+        loadToolkit();
+      });
+    });
+  }
+
+  document.getElementById('tkAdd').addEventListener('click', async ()=>{
+    const entry_type = document.getElementById('tkType').value;
+    const entry_date = document.getElementById('tkDate').value;
+    const note = document.getElementById('tkNote').value.trim();
+    if(!entry_date) return;
+    const { data: userData } = await sb.auth.getUser();
+    await sb.from('private_toolkit').insert({ user_id: userData.user.id, entry_type, entry_date, note: note || null });
+    document.getElementById('tkNote').value = '';
+    loadToolkit();
+  });
+
+  // --- mood booster ---
+  const moodMessages = {
+    Happy: [
+      "امروز لبخندتو از خودت نگیر عشقم. 🤍",
+      "فقط خواستم بگم دیدن حال خوبت، حال منم خوب می‌کنه نفسم.",
+      "امیدوارم امروز تا آخر شب همینقدر خوشحال بمونی.",
+      "خوشحالیت قشنگ‌ترین چیزیه که می‌تونم تصور کنم دورت بگردم.",
+      "امروز فقط از لحظه‌هات لذت ببر، بقیه‌ش مهم نیست.",
+      "این پیام فقط برای اینه که بگم لبخندت خیلی بهت میاد زندگیم.",
+      "امیدوارم امروز یکی از اون روزایی باشه که همیشه یادت بمونه.",
+      "اگه امروز حالت خوبه، منم یه گوشه‌ای خوشحالم."
+    ],
+    Sad: [
+      "اگر الان کنارت بودم، فقط آروم بغلت می‌کردم دختر نازم.",
+      "اشکالی نداره… همه روزا قرار نیست عالی باشن منو داری نینی.",
+      "فقط خواستم یادت بندازم که از پسش برمیای خانوم زیبا.",
+      "یه کم به خودت فرصت بده… همه چیز درست میشه.",
+      "امروز به خودت سخت نگیر، باشه عسلم؟",
+      "کاش می‌شد یه ذره از غمت رو ازت بگیرم.",
+      "اگر دلت گرفت، بدون یکی هست که دلش پیشته.",
+      "امیدوارم خیلی زود دوباره اون لبخند قشنگت برگرده قلبم."
+    ],
+    Stressed: [
+      "یه نفس عمیق… عجله نکن. 🤍",
+      "لازم نیست همه چیز امروز حل بشه میتونی راجبش با من حرف بزنی.",
+      "یه استراحت کوتاه، بعد دوباره ادامه بده دخترم قویه.",
+      "مطمئنم از پس اینم برمیای.",
+      "فقط یادت نره به خودتم یه فرصت بدی عزیزم.",
+      "اگر خسته شدی، اشکالی نداره چند دقیقه دنیا رو متوقف کنی مثلا زنگ بزن به من.",
+      "هر کاری که امروز انجام دادی، همونم ارزشمنده.",
+      "من همیشه بهت ایمان دارم، حتی وقتی خودت نداری."
+    ],
+    Tired: [
+      "برو یه کم استراحت کن… بقیه‌ش می‌مونه واسه بعد چشم قشنگم.",
+      "امروز به اندازه کافی تلاش کردی قهرمان کوچولو.",
+      "یه خواب خوب، بهترین هدیه‌ایه که الان می‌تونی به خودت بدی ماهم.",
+      "فردا دوباره از نو شروع می‌کنی. 🤍",
+      "لازم نیست همیشه قوی باشی دورسرت بگردم.",
+      "امیدوارم امشب آروم بخوابی جوجو.",
+      "یه لیوان آب بخور، بعد یه کم چشماتو ببند بعدم به من فکر کن.",
+      "حواست به خودت باشه، خیلی بیشتر از چیزی که فکر می‌کنی برام مهمی."
+    ]
+  };
+
+  document.querySelector('.moodGrid').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('button[data-mood]');
+    if(!btn) return;
+    const mood = btn.dataset.mood;
+    const box = document.getElementById('moodMessage');
+    const options = moodMessages[mood];
+    box.textContent = options[Math.floor(Math.random() * options.length)];
+    box.style.display = 'block';
+    box.dir = 'rtl';
+    box.style.fontFamily = "'Inter', 'Vazirmatn', sans-serif";
+    const { data: userData } = await sb.auth.getUser();
+    await sb.from('mood_logs').insert({ user_id: userData.user.id, mood });
+  });
+
+  // --- secret letter ---
+  // LETTER CODE HERE — change this to whatever code you hide in the gift
+  const LETTER_CODE = '1404';
+  const LETTER_TEXT = `مهسام،
+
+اگر این نامه رو می‌خونی، یعنی تا آخر این هدیه همراهش اومدی... و همین برام کلی ارزش داره.
+
+تولدت مبارک، دختر قشنگم.
+
+راستش مدت‌ها فکر می‌کردم چی می‌تونه هدیه‌ای باشه که فقط مال تو باشه. آخرش فهمیدم هیچ چیزی قشنگ‌تر از وقتی که برای ساختن یه خاطره می‌ذارم نیست.
+
+دوستت دارم. 🤍 §SIGNATURE§`;
+
+  document.getElementById('letterUnlockBtn').addEventListener('click', ()=>{
+    const code = window.prompt('Enter the code:');
+    if(code === LETTER_CODE){
+      document.getElementById('letterUnlockBtn').style.display = 'none';
+      const body = document.getElementById('letterBody');
+      const safeText = LETTER_TEXT
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace('§SIGNATURE§', '<span class="signature">MA</span>');
+      body.innerHTML = safeText;
+      body.style.display = 'block';
+    } else if(code !== null){
+      alert('Incorrect code.');
+    }
+  });
+
+  } catch(err){
+    console.error('Our Space failed to load:', err);
+    document.getElementById('loginBox').innerHTML =
+      '<div style="font-family:JetBrains Mono, monospace; font-size:12px; color:#c47a7a; text-align:center; line-height:1.8;">Something went wrong loading this section.<br>Please refresh the page.</div>';
+  }
+  }
+</script>
+
+</body>
+</html>
